@@ -111,6 +111,15 @@ func GetRandomSatisfiedChannel(group string, model string, retry int) (*Channel,
 		channels = group2model2channels[group][normalizedModel]
 	}
 
+	// If still no channels found and model has compact suffix, try base model name.
+	if len(channels) == 0 && strings.HasSuffix(model, ratio_setting.CompactModelSuffix) {
+		baseModel := strings.TrimSuffix(model, ratio_setting.CompactModelSuffix)
+		channels = group2model2channels[group][baseModel]
+		if len(channels) == 0 {
+			channels = group2model2channels[group][ratio_setting.FormatMatchingModelName(baseModel)]
+		}
+	}
+
 	if len(channels) == 0 {
 		return nil, nil
 	}

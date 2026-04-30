@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
@@ -119,6 +120,20 @@ func GetChannel(group string, model string, retry int) (*Channel, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// If no abilities found and model has compact suffix, try base model name.
+	if len(abilities) == 0 && strings.HasSuffix(model, ratio_setting.CompactModelSuffix) {
+		baseModel := strings.TrimSuffix(model, ratio_setting.CompactModelSuffix)
+		channelQuery, err = getChannelQuery(group, baseModel, retry)
+		if err != nil {
+			return nil, err
+		}
+		err = channelQuery.Order("weight DESC").Find(&abilities).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	channel := Channel{}
 	if len(abilities) > 0 {
 		// Randomly choose one
